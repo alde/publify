@@ -12,13 +12,14 @@ import (
 )
 
 var (
-	outputPath   string
-	readerType   string
-	enableColor  bool
-	workerCount  int
-	enableOCR    bool
-	ocrLanguage  string
-	imagePages   string
+	outputPath       string
+	readerType       string
+	enableColor      bool
+	workerCount      int
+	enableOCR        bool
+	ocrLanguage      string
+	imagePages       string
+	skipPages        string
 )
 
 var convertCmd = &cobra.Command{
@@ -31,7 +32,8 @@ Currently supports:
 
 Examples:
   publify convert input.pdf -o output.epub --reader kobo --color
-  publify convert book.pdf -o book.epub --reader kobo --image-pages "1-2,419-420"`,
+  publify convert book.pdf -o book.epub --reader kobo --image-pages "1-2,419-420"
+  publify convert book.pdf -o book.epub --skip "8,10,12" --ocr`,
 	Args: cobra.ExactArgs(1),
 	RunE: runConvert,
 }
@@ -46,6 +48,7 @@ func init() {
 	convertCmd.Flags().BoolVar(&enableOCR, "ocr", false, "Enable OCR for scanned PDFs (requires Tesseract)")
 	convertCmd.Flags().StringVar(&ocrLanguage, "ocr-lang", "eng", "OCR language (eng, sve, deu, etc.)")
 	convertCmd.Flags().StringVar(&imagePages, "image-pages", "", "Page ranges to treat as images (e.g., \"1-2,419-420\")")
+	convertCmd.Flags().StringVar(&skipPages, "skip", "", "Page numbers to skip entirely (e.g., \"8,10,12,418\")")
 
 	convertCmd.MarkFlagRequired("output")
 }
@@ -87,6 +90,14 @@ func runConvert(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	// Validate skip pages format if provided
+	if skipPages != "" {
+		err := validateSkipPages(skipPages)
+		if err != nil {
+			return fmt.Errorf("invalid skip pages format: %w", err)
+		}
+	}
+
 	// Set up converter options
 	opts := converter.Options{
 		InputPath:      inputPath,
@@ -97,6 +108,7 @@ func runConvert(cmd *cobra.Command, args []string) error {
 		EnableOCR:      enableOCR,
 		OCRLanguage:    ocrLanguage,
 		ImagePageRange: imagePages,
+		SkipPages:      skipPages,
 	}
 
 	// Run conversion
@@ -117,6 +129,40 @@ func validateInputFile(path string) error {
 	}
 
 	return nil
+}
+
+func validateSkipPages(skipPages string) error {
+	if skipPages == "" {
+		return nil
+	}
+
+	// Split by comma and validate each page number
+	pageStrs := strings.Split(skipPages, ",")
+	for _, pageStr := range pageStrs {
+		pageStr = strings.TrimSpace(pageStr)
+		if pageStr == "" {
+			continue
+		}
+
+		// Simple validation - should be a positive integer
+		if !isPositiveInteger(pageStr) {
+			return fmt.Errorf("invalid page number: %s (must be positive integer)", pageStr)
+		}
+	}
+
+	return nil
+}
+
+func isPositiveInteger(s string) bool {
+	if len(s) == 0 {
+		return false
+	}
+	for _, char := range s {
+		if char < '0' || char > '9' {
+			return false
+		}
+	}
+	return true
 }
 
 func validateOutputPath(path string) error {

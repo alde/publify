@@ -23,6 +23,7 @@ type Options struct {
 	EnableOCR      bool
 	OCRLanguage    string
 	ImagePageRange string
+	SkipPages      string
 }
 
 // Converter handles the PDF to EPUB conversion process
@@ -120,7 +121,7 @@ func (c *Converter) Convert() error {
 // initialize sets up the converter components
 func (c *Converter) initialize() error {
 	// Initialize PDF processor with image page ranges and OCR options
-	pdfProc, err := NewPDFProcessor(c.options.InputPath, c.options.ImagePageRange, c.options.EnableOCR, c.options.OCRLanguage)
+	pdfProc, err := NewPDFProcessor(c.options.InputPath, c.options.ImagePageRange, c.options.EnableOCR, c.options.OCRLanguage, c.options.SkipPages)
 	if err != nil {
 		return fmt.Errorf("failed to create PDF processor: %w", err)
 	}
@@ -230,10 +231,34 @@ func (c *Converter) displayResults() {
 	// Performance
 	fmt.Printf("Processing:    %v\n", c.stats.ProcessingTime.Round(time.Millisecond))
 
+	// Validation results
+	if c.pdfProc != nil {
+		rejectedPages := c.pdfProc.GetRejectedPages()
+		if len(rejectedPages) > 0 {
+			fmt.Printf("\n")
+			fmt.Printf("Validation Results:\n")
+			fmt.Printf("Pages rejected by bleed-through detection: %v\n", rejectedPages)
+			fmt.Printf("Suggestion: Consider adding --skip \"%s\" for faster processing\n", formatPageList(rejectedPages))
+		}
+	}
+
 	fmt.Printf("================================================================\n")
 	fmt.Printf("Ready for your %s\n", c.options.Profile.Name)
 }
 
+
+// formatPageList formats a list of page numbers into a comma-separated string
+func formatPageList(pages []int) string {
+	if len(pages) == 0 {
+		return ""
+	}
+
+	strs := make([]string, len(pages))
+	for i, page := range pages {
+		strs[i] = fmt.Sprintf("%d", page)
+	}
+	return strings.Join(strs, ",")
+}
 
 // GetStats returns the current conversion statistics
 func (c *Converter) GetStats() ConversionStats {
