@@ -1,0 +1,53 @@
+# Pre-commit hooks for Publify
+# See https://pre-commit.com for more information
+
+repos:
+  - repo: local
+    hooks:
+      - id: gofmt
+        name: gofmt
+        entry: gofmt
+        language: golang
+        types: [go]
+        args: [-w]
+        description: Format Go code with gofmt
+
+      - id: goimports
+        name: goimports
+        entry: goimports
+        language: golang
+        types: [go]
+        args: [-w]
+        description: Update Go import lines
+
+      - id: go-vet
+        name: go vet
+        entry: go
+        language: golang
+        types: [go]
+        args: [vet, ./...]
+        pass_filenames: false
+        description: Check Go code with go vet
+
+      - id: go-mod-tidy
+        name: go mod tidy
+        entry: go
+        language: golang
+        types: [go]
+        args: [mod, tidy]
+        pass_filenames: false
+        description: Tidy Go modules
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: trailing-whitespace
+        description: Remove trailing whitespace
+      - id: end-of-file-fixer
+        description: Ensure files end with newline
+      - id: check-yaml
+        description: Check YAML syntax
+      - id: check-toml
+        description: Check TOML syntax
+      - id: check-json
+        description: Check JSON syntax

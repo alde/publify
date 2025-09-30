@@ -30,6 +30,7 @@ func (tp *TextProcessor) ProcessText(text string) string {
 	}
 
 	text = tp.basicCleanup(text)
+	text = tp.removeBookArtifacts(text) // Remove headers, footers, page numbers
 	text = tp.normalizeWhitespace(text)
 	text = tp.processChapters(text)
 	if tp.options.ConvertToHTML {
@@ -56,6 +57,107 @@ func (tp *TextProcessor) basicCleanup(text string) string {
 	}
 
 	return strings.Join(lines, "\n")
+}
+
+// removeBookArtifacts removes common book formatting artifacts (headers, footers, page numbers)
+func (tp *TextProcessor) removeBookArtifacts(text string) string {
+	lines := strings.Split(text, "\n")
+	var cleanLines []string
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+
+		// Skip empty lines
+		if line == "" {
+			cleanLines = append(cleanLines, "")
+			continue
+		}
+
+		// Skip if it's just a page number (common patterns)
+		if tp.isPageNumber(line) {
+			continue
+		}
+
+		// Skip if it's a book header/footer (book title, chapter name in header)
+		if tp.isBookHeader(line) {
+			continue
+		}
+
+		cleanLines = append(cleanLines, line)
+	}
+
+	return strings.Join(cleanLines, "\n")
+}
+
+// isPageNumber detects if a line is likely just a page number
+func (tp *TextProcessor) isPageNumber(line string) bool {
+	line = strings.TrimSpace(line)
+
+	// Just digits (page numbers starting from page 11)
+	if regexp.MustCompile(`^\d+$`).MatchString(line) {
+		return true
+	}
+
+	// Page number with formatting like "- 42 -" or "42."
+	if regexp.MustCompile(`^[-\s]*\d+[-\s\\.]*$`).MatchString(line) {
+		return true
+	}
+
+	return false
+}
+
+// isBookHeader detects if a line is likely a book header/footer
+func (tp *TextProcessor) isBookHeader(line string) bool {
+	line = strings.TrimSpace(line)
+
+	// Too short to be meaningful content
+	if len(line) < 3 {
+		return false
+	}
+
+	// Common book title patterns (like "Air Babylon" in cursive/italic markup)
+	bookTitles := []string{
+		"Air Babylon",
+		"AIR BABYLON",
+		"air babylon",
+	}
+
+	for _, title := range bookTitles {
+		if strings.Contains(strings.ToLower(line), strings.ToLower(title)) {
+			return true
+		}
+	}
+
+	// Very short lines that are likely headers (chapter names, etc.)
+	// But exclude time spans which could be chapter markers
+	if len(line) <= 30 && !tp.isTimeSpan(line) {
+		// Check if it's all caps (likely a header)
+		if strings.ToUpper(line) == line && len(strings.Fields(line)) <= 3 {
+			return true
+		}
+	}
+
+	return false
+}
+
+// isTimeSpan detects time-based chapter markers like "5-6am" or "11pm-12am"
+func (tp *TextProcessor) isTimeSpan(line string) bool {
+	line = strings.ToLower(strings.TrimSpace(line))
+
+	// Patterns like "5-6am", "11pm-12am", "2.30-3.30pm"
+	timePatterns := []string{
+		`^\d{1,2}(:\d{2})?(-|\s*to\s*)\d{1,2}(:\d{2})?(am|pm)$`,
+		`^\d{1,2}(:\d{2})?(am|pm)(-|\s*to\s*)\d{1,2}(:\d{2})?(am|pm)$`,
+		`^\d{1,2}\.\d{2}(-|\s*to\s*)\d{1,2}\.\d{2}(am|pm)$`,
+	}
+
+	for _, pattern := range timePatterns {
+		if regexp.MustCompile(pattern).MatchString(line) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (tp *TextProcessor) normalizeWhitespace(text string) string {
@@ -86,6 +188,7 @@ func (tp *TextProcessor) processChapters(text string) string {
 			continue
 		}
 
+		// Detect traditional chapter markers
 		if chapterPattern.MatchString(line) {
 			if len(processed) > 0 && processed[len(processed)-1] != "" {
 				processed = append(processed, "")
@@ -95,6 +198,18 @@ func (tp *TextProcessor) processChapters(text string) string {
 			continue
 		}
 
+		// Detect time-based chapter markers (like "5-6am")
+		if tp.isTimeSpan(line) {
+			if len(processed) > 0 && processed[len(processed)-1] != "" {
+				processed = append(processed, "")
+			}
+			// Format the time span as a proper chapter heading
+			processed = append(processed, line)
+			processed = append(processed, "")
+			continue
+		}
+
+		// Detect all-caps section headers
 		if sectionPattern.MatchString(line) && len(line) < 100 {
 			processed = append(processed, "")
 			processed = append(processed, line)
@@ -155,12 +270,23 @@ func (tp *TextProcessor) isHeader(line string) bool {
 		return false
 	}
 
+	// Traditional chapter patterns
+	chapterPattern := regexp.MustCompile(`^(Chapter|CHAPTER|Ch\.|CH\.)\s*\d+`)
+	if chapterPattern.MatchString(line) {
+		return true
+	}
+
+	// Time-based chapter markers (like "5-6am")
+	if tp.isTimeSpan(line) {
+		return true
+	}
+
+	// All caps headers
 	if strings.ToUpper(line) == line && len(line) > 5 {
 		return true
 	}
 
-	chapterPattern := regexp.MustCompile(`^(Chapter|CHAPTER|Ch\.|CH\.)\s*\d+`)
-	return chapterPattern.MatchString(line)
+	return false
 }
 
 func (tp *TextProcessor) EstimateTextSize(text string) int {

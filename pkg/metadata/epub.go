@@ -26,16 +26,16 @@ type EPUBMetadata struct {
 
 // EPUBReader provides read-only access to EPUB metadata
 type EPUBReader struct {
-	filePath string
+	filePath  string
 	zipReader *zip.ReadCloser
 }
 
 // EPUBEditor provides read-write access to EPUB metadata
 type EPUBEditor struct {
-	filePath   string
-	tempDir    string
-	metadata   EPUBMetadata
-	modified   bool
+	filePath string
+	tempDir  string
+	metadata EPUBMetadata
+	modified bool
 }
 
 // Chapter represents a chapter in the EPUB

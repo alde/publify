@@ -19,13 +19,13 @@ var profiles = map[string]Profile{
 			SupportsColor: true,
 			ColorDepth:    24,
 
-			MaxImageWidth:        1200, // Slightly smaller than screen for margins
-			MaxImageHeight:       1600,
-			ImageQuality:         85, // Good balance for color display
-			CompressionLevel:     "high", // Prioritize file size
+			MaxImageWidth:    1200, // Slightly smaller than screen for margins
+			MaxImageHeight:   1600,
+			ImageQuality:     85,     // Good balance for color display
+			CompressionLevel: "high", // Prioritize file size
 
-			SupportedImageFormats:   []string{"webp", "jpeg", "png"},
-			PreferredImageFormat:    "webp", // WebP for best compression
+			SupportedImageFormats: []string{"webp", "jpeg", "png"},
+			PreferredImageFormat:  "webp", // WebP for best compression
 
 			TargetSizeRatio:         0.25, // Aim for 25% of original PDF size
 			StripUnsupportedContent: true,
@@ -48,13 +48,13 @@ var profiles = map[string]Profile{
 			SupportsColor: false,
 			ColorDepth:    8,
 
-			MaxImageWidth:        1200,
-			MaxImageHeight:       1600,
-			ImageQuality:         90, // Higher quality for grayscale details
-			CompressionLevel:     "high",
+			MaxImageWidth:    1200,
+			MaxImageHeight:   1600,
+			ImageQuality:     90, // Higher quality for grayscale details
+			CompressionLevel: "high",
 
-			SupportedImageFormats:   []string{"webp", "jpeg", "png"},
-			PreferredImageFormat:    "webp", // WebP for best compression
+			SupportedImageFormats: []string{"webp", "jpeg", "png"},
+			PreferredImageFormat:  "webp", // WebP for best compression
 
 			TargetSizeRatio:         0.15, // Very aggressive for B&W - 15% of original
 			StripUnsupportedContent: true,
@@ -77,13 +77,13 @@ var profiles = map[string]Profile{
 			SupportsColor: false,
 			ColorDepth:    8,
 
-			MaxImageWidth:        1200,
-			MaxImageHeight:       1600,
-			ImageQuality:         85,
-			CompressionLevel:     "high",
+			MaxImageWidth:    1200,
+			MaxImageHeight:   1600,
+			ImageQuality:     85,
+			CompressionLevel: "high",
 
-			SupportedImageFormats:   []string{"jpeg", "png"}, // Kindle doesn't support WebP
-			PreferredImageFormat:    "jpeg",
+			SupportedImageFormats: []string{"jpeg", "png"}, // Kindle doesn't support WebP
+			PreferredImageFormat:  "jpeg",
 
 			TargetSizeRatio:         0.2, // 20% of original - Kindle needs small files
 			StripUnsupportedContent: true,
@@ -106,13 +106,13 @@ var profiles = map[string]Profile{
 			SupportsColor: false,
 			ColorDepth:    8,
 
-			MaxImageWidth:        1200,
-			MaxImageHeight:       1600,
-			ImageQuality:         90,
-			CompressionLevel:     "high",
+			MaxImageWidth:    1200,
+			MaxImageHeight:   1600,
+			ImageQuality:     90,
+			CompressionLevel: "high",
 
-			SupportedImageFormats:   []string{"jpeg", "png"}, // Kindle doesn't support WebP
-			PreferredImageFormat:    "jpeg",
+			SupportedImageFormats: []string{"jpeg", "png"}, // Kindle doesn't support WebP
+			PreferredImageFormat:  "jpeg",
 
 			TargetSizeRatio:         0.25, // 25% of original
 			StripUnsupportedContent: true,
@@ -135,13 +135,13 @@ var profiles = map[string]Profile{
 			SupportsColor: false,
 			ColorDepth:    8,
 
-			MaxImageWidth:        750,
-			MaxImageHeight:       1100,
-			ImageQuality:         75,
-			CompressionLevel:     "high",
+			MaxImageWidth:    750,
+			MaxImageHeight:   1100,
+			ImageQuality:     75,
+			CompressionLevel: "high",
 
-			SupportedImageFormats:   []string{"jpeg", "png"}, // Conservative format support
-			PreferredImageFormat:    "jpeg",
+			SupportedImageFormats: []string{"jpeg", "png"}, // Conservative format support
+			PreferredImageFormat:  "jpeg",
 
 			TargetSizeRatio:         0.3, // 30% of original - conservative but efficient
 			StripUnsupportedContent: true,

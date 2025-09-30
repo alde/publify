@@ -2,14 +2,13 @@ package converter
 
 import (
 	"fmt"
-	"html"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
-	"github.com/bmaupin/go-epub"
 	"github.com/alde/publify/pkg/reader"
+	"github.com/bmaupin/go-epub"
 )
 
 // EPUBGenerator handles EPUB file creation
@@ -101,40 +100,21 @@ func (eg *EPUBGenerator) AddChapter(title string, pages []PDFPage) error {
 	return nil
 }
 
-// AddPage adds a single page as a chapter
+// AddPage adds a single page as a chapter (legacy method, prefer AddChapter for better organization)
 func (eg *EPUBGenerator) AddPage(page PDFPage) error {
-	title := fmt.Sprintf("Page %d", page.Number)
-	return eg.AddChapter(title, []PDFPage{page})
+	return eg.AddChapter("Chapter", []PDFPage{page})
 }
 
 func (eg *EPUBGenerator) createHTMLContent(title, content string) string {
+	// Only add h1 title if it's not generic
+	if title == "Chapter" {
+		return content // Skip generic titles to avoid repetitive headings
+	}
+
 	html := fmt.Sprintf(`<h1>%s</h1>
 %s`, title, content)
 
 	return html
-}
-
-func convertTextToHTML(text string) string {
-	if text == "" {
-		return ""
-	}
-
-	text = html.EscapeString(text)
-
-	paragraphs := strings.Split(text, "\n\n")
-	var htmlParts []string
-
-	for _, para := range paragraphs {
-		para = strings.TrimSpace(para)
-		if para == "" {
-			continue
-		}
-
-		para = strings.ReplaceAll(para, "\n", "<br/>")
-		htmlParts = append(htmlParts, fmt.Sprintf("<p>\n%s\n</p>", para))
-	}
-
-	return strings.Join(htmlParts, "\n\n")
 }
 
 // SetCover sets the cover image for the EPUB
@@ -203,7 +183,6 @@ func (eg *EPUBGenerator) Write(outputPath string) error {
 	return nil
 }
 
-
 // EPUBMetadata contains EPUB metadata information
 type EPUBMetadata struct {
 	Title       string
@@ -228,7 +207,6 @@ func (eg *EPUBGenerator) GetMetadata() EPUBMetadata {
 		Modified:    time.Now(), // Placeholder
 	}
 }
-
 
 func (eg *EPUBGenerator) Validate() error {
 	if eg.epub.Title() == "" {

@@ -8,19 +8,19 @@ import (
 	"github.com/alde/publify/pkg/progress"
 )
 
-// Job represents a unit of work to be processed
+// Job represents a unit of work to be processed (because work should be organized, unlike my desk)
 type Job interface {
 	Process(ctx context.Context) error
 	ID() string
 }
 
-// Result contains the outcome of processing a job
+// Result contains the outcome of processing a job (success or failure, like Swedish weather)
 type Result struct {
 	JobID string
 	Error error
 }
 
-// Pool manages a pool of worker goroutines
+// Pool manages a pool of worker goroutines (Swedish teamwork in digital form)
 type Pool struct {
 	workerCount int
 	jobs        chan Job
@@ -31,10 +31,10 @@ type Pool struct {
 	progress    *progress.ProgressTracker
 }
 
-// NewPool creates a new worker pool
+// NewPool creates a new worker pool (because CPUs need management too, ja?)
 func NewPool(workerCount int) *Pool {
 	if workerCount <= 0 {
-		workerCount = runtime.NumCPU()
+		workerCount = runtime.NumCPU() // When in doubt, use what the machine gives you
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())

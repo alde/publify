@@ -12,9 +12,9 @@ type DeviceCapabilities struct {
 	ColorDepth    int // Bits per pixel (1 for grayscale, 8 for 256 colors, 24 for full color)
 
 	// Image processing preferences
-	MaxImageWidth  int     // Maximum recommended image width in pixels
-	MaxImageHeight int     // Maximum recommended image height in pixels
-	ImageQuality   int     // JPEG quality (1-100, higher = better quality)
+	MaxImageWidth    int    // Maximum recommended image width in pixels
+	MaxImageHeight   int    // Maximum recommended image height in pixels
+	ImageQuality     int    // JPEG quality (1-100, higher = better quality)
 	CompressionLevel string // "low", "medium", "high" - affects file size vs quality
 
 	// Format preferences
@@ -22,10 +22,10 @@ type DeviceCapabilities struct {
 	PreferredImageFormat  string   // Primary format to use
 
 	// Size optimization settings
-	TargetSizeRatio       float64 // Target output size as ratio of input (e.g., 0.3 = 30% of original)
-	StripUnsupportedContent bool   // Remove content the reader can't use
-	AggressiveCompression   bool   // Use maximum compression for file size
-	OptimizeForSize       bool     // Prioritize file size over quality
+	TargetSizeRatio         float64 // Target output size as ratio of input (e.g., 0.3 = 30% of original)
+	StripUnsupportedContent bool    // Remove content the reader can't use
+	AggressiveCompression   bool    // Use maximum compression for file size
+	OptimizeForSize         bool    // Prioritize file size over quality
 
 	// Text rendering
 	SupportsAdvancedTypography bool // Ligatures, kerning, etc.

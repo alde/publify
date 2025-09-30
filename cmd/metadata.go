@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/spf13/cobra"
 	"github.com/alde/publify/pkg/metadata"
+	"github.com/spf13/cobra"
 )
 
 var (

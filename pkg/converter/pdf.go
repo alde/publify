@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/alde/publify/internal/worker"
 	"github.com/klippa-app/go-pdfium"
 	"github.com/klippa-app/go-pdfium/requests"
 	"github.com/klippa-app/go-pdfium/webassembly"
-	"github.com/alde/publify/internal/worker"
 )
 
 type PDFPage struct {
@@ -137,7 +137,10 @@ func (p *PDFProcessor) GetPageCount() int {
 }
 
 func (p *PDFProcessor) ProcessPages(ctx context.Context, pool *worker.Pool, progressCallback func(int, int)) ([]PDFPage, error) {
-	return p.processSequentially(ctx, progressCallback)
+	if pool == nil {
+		return p.processSequentially(ctx, progressCallback)
+	}
+	return p.processWithWorkerPool(ctx, pool)
 }
 
 func (p *PDFProcessor) processSequentially(ctx context.Context, progressCallback func(int, int)) ([]PDFPage, error) {
@@ -164,6 +167,88 @@ func (p *PDFProcessor) processSequentially(ctx context.Context, progressCallback
 	}
 
 	return pages, nil
+}
+
+// processWithWorkerPool processes pages using the worker pool for concurrency
+func (p *PDFProcessor) processWithWorkerPool(ctx context.Context, pool *worker.Pool) ([]PDFPage, error) {
+	pageCount := p.GetPageCount()
+	pages := make([]PDFPage, pageCount)
+	results := pool.Results()
+	pageResults := make(chan PageResult, pageCount)
+
+	// Submit all page processing jobs
+	for i := 1; i <= pageCount; i++ {
+		job := &PageProcessingJob{
+			processor:  p,
+			pageNum:    i,
+			resultChan: pageResults,
+		}
+		pool.Submit(job)
+	}
+
+	// Collect results from both channels
+	receivedResults := make(map[int]PDFPage)
+	completedJobs := 0
+
+	for completedJobs < pageCount {
+		select {
+		case result := <-results:
+			if result.Error != nil {
+				return nil, fmt.Errorf("page processing failed: %w", result.Error)
+			}
+			completedJobs++
+		case pageResult := <-pageResults:
+			if pageResult.Error != nil {
+				return nil, fmt.Errorf("page %d processing failed: %w", pageResult.PageNum, pageResult.Error)
+			}
+			receivedResults[pageResult.PageNum] = pageResult.Page
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+	}
+
+	// Arrange results in correct order
+	for i := 1; i <= pageCount; i++ {
+		if page, exists := receivedResults[i]; exists {
+			pages[i-1] = page
+		} else {
+			// Return empty page if processing failed
+			pages[i-1] = PDFPage{Number: i}
+		}
+	}
+
+	return pages, nil
+}
+
+// PageResult holds the result of processing a single page
+type PageResult struct {
+	PageNum int
+	Page    PDFPage
+	Error   error
+}
+
+// PageProcessingJob implements the worker.Job interface for processing PDF pages
+type PageProcessingJob struct {
+	processor  *PDFProcessor
+	pageNum    int
+	resultChan chan<- PageResult
+}
+
+func (j *PageProcessingJob) ID() string {
+	return fmt.Sprintf("page-%d", j.pageNum)
+}
+
+func (j *PageProcessingJob) Process(ctx context.Context) error {
+	page, err := j.processor.ProcessPage(j.pageNum)
+
+	// Send result through channel
+	j.resultChan <- PageResult{
+		PageNum: j.pageNum,
+		Page:    page,
+		Error:   err,
+	}
+
+	return err // Also return error for worker pool tracking
 }
 
 func (p *PDFProcessor) ProcessPage(pageNum int) (PDFPage, error) {

@@ -101,13 +101,24 @@ check:
 	$(GOMOD) verify
 	$(GOCMD) vet ./...
 
-# Format code
+# Format code (keeping things lagom and tidy)
 fmt:
 	$(GOCMD) fmt ./...
 
-# Run static analysis
+# Run static analysis (because code should be clean like a Swedish home)
 lint:
 	golangci-lint run
+
+# Setup pre-commit hooks (preventing messy commits with Swedish efficiency)
+setup-hooks:
+	@echo "Setting up pre-commit hooks..."
+	@command -v pre-commit >/dev/null 2>&1 || { echo "pre-commit not found. Install with: pip install pre-commit"; exit 1; }
+	pre-commit install
+	@echo "Pre-commit hooks installed successfully!"
+
+# Run pre-commit on all files
+pre-commit-all:
+	pre-commit run --all-files
 
 help:
 	@echo "Available targets:"
@@ -130,4 +141,6 @@ help:
 	@echo "  check         - Verify modules and run vet"
 	@echo "  fmt           - Format Go code"
 	@echo "  lint          - Run static analysis (requires golangci-lint)"
+	@echo "  setup-hooks   - Setup pre-commit hooks for formatting enforcement"
+	@echo "  pre-commit-all - Run pre-commit hooks on all files"
 	@echo "  help          - Show this help message"

@@ -8,22 +8,22 @@ import (
 
 // WorkerProgress tracks progress for individual workers
 type WorkerProgress struct {
-	WorkerID    int
-	JobsTotal   int
+	WorkerID      int
+	JobsTotal     int
 	JobsCompleted int
-	CurrentJob  string
-	LastUpdate  time.Time
+	CurrentJob    string
+	LastUpdate    time.Time
 }
 
 // ProgressTracker manages progress across multiple workers
 type ProgressTracker struct {
-	mu           sync.RWMutex
-	workers      map[int]*WorkerProgress
-	totalJobs    int
+	mu            sync.RWMutex
+	workers       map[int]*WorkerProgress
+	totalJobs     int
 	completedJobs int
-	startTime    time.Time
-	lastDisplay  time.Time
-	displayRate  time.Duration
+	startTime     time.Time
+	lastDisplay   time.Time
+	displayRate   time.Duration
 }
 
 // NewProgressTracker creates a new progress tracker
@@ -137,12 +137,30 @@ func (pt *ProgressTracker) Finish() {
 	fmt.Printf("Completed %d jobs in %v\n",
 		pt.completedJobs, elapsed.Round(time.Millisecond))
 
-	// Show final worker stats
+	// Show final worker stats (sorted by worker ID for consistency, because order matters like in Swedish queues)
 	fmt.Printf("Worker Statistics:\n")
-	for workerID, worker := range pt.workers {
-		rate := float64(worker.JobsCompleted) / elapsed.Seconds()
-		fmt.Printf("  Worker %d: %d jobs (%.1f jobs/sec)\n",
-			workerID, worker.JobsCompleted, rate)
+
+	// Find max worker ID to create sorted list
+	maxWorkerID := -1
+	for workerID := range pt.workers {
+		if workerID > maxWorkerID {
+			maxWorkerID = workerID
+		}
+	}
+
+	// Display workers in order, only showing those that completed jobs (no need to show slackers with zero work)
+	workersWithJobs := false
+	for workerID := 0; workerID <= maxWorkerID; workerID++ {
+		if worker, exists := pt.workers[workerID]; exists && worker.JobsCompleted > 0 {
+			rate := float64(worker.JobsCompleted) / elapsed.Seconds()
+			fmt.Printf("  Worker %d: %d jobs (%.1f jobs/sec)\n",
+				workerID, worker.JobsCompleted, rate)
+			workersWithJobs = true
+		}
+	}
+
+	if !workersWithJobs {
+		fmt.Printf("  No jobs were processed by workers\n")
 	}
 	fmt.Println()
 }

@@ -282,17 +282,17 @@ func (eo *EPUBOptimizer) CalculateOptimizationStats(original, optimized string) 
 	}
 
 	return OptimizationStats{
-		OriginalSize:   originalSize,
-		OptimizedSize:  optimizedSize,
-		SizeReduction:  reduction,
-		BytesSaved:     originalSize - optimizedSize,
+		OriginalSize:  originalSize,
+		OptimizedSize: optimizedSize,
+		SizeReduction: reduction,
+		BytesSaved:    originalSize - optimizedSize,
 	}
 }
 
 // OptimizationStats contains optimization metrics
 type OptimizationStats struct {
-	OriginalSize   int
-	OptimizedSize  int
-	SizeReduction  float64 // Percentage
-	BytesSaved     int
+	OriginalSize  int
+	OptimizedSize int
+	SizeReduction float64 // Percentage
+	BytesSaved    int
 }

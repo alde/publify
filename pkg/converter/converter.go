@@ -5,15 +5,16 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
-	"github.com/dustin/go-humanize"
 	"github.com/alde/publify/internal/worker"
 	"github.com/alde/publify/pkg/reader"
+	"github.com/dustin/go-humanize"
 )
 
-// Options contains conversion settings
+// Options contains conversion settings (because even PDFs need their preferences, ja?)
 type Options struct {
 	InputPath      string
 	OutputPath     string
@@ -26,7 +27,7 @@ type Options struct {
 	SkipPages      string
 }
 
-// Converter handles the PDF to EPUB conversion process
+// Converter handles the PDF to EPUB conversion process (with the thoroughness of a Swedish quality inspector)
 type Converter struct {
 	options   Options
 	pdfProc   *PDFProcessor
@@ -35,7 +36,7 @@ type Converter struct {
 	startTime time.Time
 }
 
-// ConversionStats tracks conversion metrics
+// ConversionStats tracks conversion metrics (numbers that make developers feel accomplished)
 type ConversionStats struct {
 	InputFileSize    uint64
 	OutputFileSize   uint64
@@ -66,14 +67,14 @@ func (c *Converter) Convert() error {
 	}
 	defer c.cleanup()
 
-	// Get input file size for statistics
+	// Get input file size for statistics (because size matters in file conversion, unlike in many other things)
 	inputSize, err := c.pdfProc.GetFileSize()
 	if err != nil {
 		return fmt.Errorf("failed to get input file size: %w", err)
 	}
 	c.stats.InputFileSize = uint64(inputSize)
 
-	// Create worker pool with progress tracking
+	// Create worker pool with progress tracking (Swedish efficiency meets Go concurrency)
 	pool := worker.NewPoolWithProgress(c.options.WorkerCount, c.pdfProc.GetPageCount())
 	pool.Start()
 	defer pool.Stop()
@@ -84,7 +85,7 @@ func (c *Converter) Convert() error {
 		fmt.Printf("Using %d worker goroutines\n", pool.WorkerCount())
 	}
 
-	// Process PDF pages
+	// Process PDF pages (where the magic happens, or at least where we pretend it does)
 	pages, err := c.pdfProc.ProcessPages(ctx, pool, nil) // Progress handled by worker pool now
 	if err != nil {
 		return fmt.Errorf("PDF processing failed: %w", err)
@@ -150,31 +151,26 @@ func (c *Converter) createEPUBOptions() EPUBOptions {
 	}
 }
 
-// progressCallback handles progress updates during PDF processing
-func (c *Converter) progressCallback(processed, total int) {
-	if c.options.Verbose {
-		percentage := float64(processed) / float64(total) * 100
-		fmt.Printf("\rProcessing pages: %d/%d (%.1f%%)", processed, total, percentage)
-	}
-}
-
 // generateEPUB creates the EPUB content from processed pages
 func (c *Converter) generateEPUB(pages []PDFPage) error {
 	if len(pages) == 0 {
 		return fmt.Errorf("no pages to convert")
 	}
 
-	// Group pages into chapters (for now, each page is a chapter)
-	for _, page := range pages {
-		if err := c.epubGen.AddPage(page); err != nil {
-			return fmt.Errorf("failed to add page %d: %w", page.Number, err)
+	// Group pages into reasonable chapters (because nobody wants 200 tiny chapters)
+	chapters := c.groupPagesIntoChapters(pages)
+
+	for i, chapter := range chapters {
+		chapterTitle := fmt.Sprintf("Chapter %d", i+1)
+		if err := c.epubGen.AddChapter(chapterTitle, chapter); err != nil {
+			return fmt.Errorf("failed to add chapter %d: %w", i+1, err)
 		}
 
 		// Update statistics
-		c.stats.TextCharCount += len(page.Text)
-		if page.HasText {
-			c.stats.ChapterCount++
+		for _, page := range chapter {
+			c.stats.TextCharCount += len(page.Text)
 		}
+		c.stats.ChapterCount++
 	}
 
 	// Validate EPUB before writing
@@ -246,7 +242,6 @@ func (c *Converter) displayResults() {
 	fmt.Printf("Ready for your %s\n", c.options.Profile.Name)
 }
 
-
 // formatPageList formats a list of page numbers into a comma-separated string
 func formatPageList(pages []int) string {
 	if len(pages) == 0 {
@@ -265,10 +260,86 @@ func (c *Converter) GetStats() ConversionStats {
 	return c.stats
 }
 
+// groupPagesIntoChapters intelligently groups pages into chapters for better reading experience
+func (c *Converter) groupPagesIntoChapters(pages []PDFPage) [][]PDFPage {
+	const maxPagesPerChapter = 15 // Reasonable chapter size (increased for books with many short pages)
+	const minTextPerChapter = 800 // Minimum characters for a meaningful chapter
+
+	var chapters [][]PDFPage
+	var currentChapter []PDFPage
+	currentTextLength := 0
+
+	for i, page := range pages {
+		// Check if this page starts with a potential chapter marker
+		isChapterBreak := false
+		if page.HasText && len(currentChapter) > 0 {
+			// Look for time spans or traditional chapter markers at the start of the page
+			lines := strings.Split(strings.TrimSpace(page.Text), "\n")
+			if len(lines) > 0 {
+				firstLine := strings.TrimSpace(lines[0])
+				// Check for time spans (like "5-6am") or traditional chapter markers
+				if c.isTimeSpanChapterMarker(firstLine) ||
+					strings.Contains(strings.ToLower(firstLine), "chapter") {
+					isChapterBreak = true
+				}
+			}
+		}
+
+		// Add page to current chapter
+		currentChapter = append(currentChapter, page)
+		if page.HasText {
+			currentTextLength += len(page.Text)
+		}
+
+		// Create new chapter if we've reached limits or found a natural break
+		shouldBreak := isChapterBreak ||
+			len(currentChapter) >= maxPagesPerChapter ||
+			(currentTextLength >= minTextPerChapter && len(currentChapter) >= 3)
+
+		// Don't break on the first page or if we'd create a tiny chapter
+		if shouldBreak && i > 0 && len(currentChapter) > 1 {
+			chapters = append(chapters, currentChapter)
+			currentChapter = []PDFPage{}
+			currentTextLength = 0
+		}
+	}
+
+	// Add remaining pages as final chapter
+	if len(currentChapter) > 0 {
+		chapters = append(chapters, currentChapter)
+	}
+
+	// Ensure we have at least one chapter
+	if len(chapters) == 0 {
+		chapters = [][]PDFPage{pages}
+	}
+
+	return chapters
+}
+
+// isTimeSpanChapterMarker detects time-based chapter markers like "5-6am"
+func (c *Converter) isTimeSpanChapterMarker(line string) bool {
+	line = strings.ToLower(strings.TrimSpace(line))
+
+	// Patterns like "5-6am", "11pm-12am", "2.30-3.30pm"
+	timePatterns := []string{
+		`^\d{1,2}(:\d{2})?(-|\s*to\s*)\d{1,2}(:\d{2})?(am|pm)$`,
+		`^\d{1,2}(:\d{2})?(am|pm)(-|\s*to\s*)\d{1,2}(:\d{2})?(am|pm)$`,
+		`^\d{1,2}\.\d{2}(-|\s*to\s*)\d{1,2}\.\d{2}(am|pm)$`,
+	}
+
+	for _, pattern := range timePatterns {
+		if regexp.MustCompile(pattern).MatchString(line) {
+			return true
+		}
+	}
+
+	return false
+}
+
 // cleanup closes resources
 func (c *Converter) cleanup() {
 	if c.pdfProc != nil {
 		c.pdfProc.Close()
 	}
 }
-

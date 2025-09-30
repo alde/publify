@@ -9,9 +9,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/disintegration/imaging"
-	"github.com/chai2010/webp"
 	"github.com/alde/publify/pkg/reader"
+	"github.com/chai2010/webp"
+	"github.com/disintegration/imaging"
 )
 
 // ImageProcessor handles image optimization for e-readers
@@ -228,10 +228,10 @@ func (ip *ImageProcessor) CleanupTempFiles() error {
 
 // ImageStats contains statistics about image processing
 type ImageStats struct {
-	TotalImages     int
-	ProcessedImages int
-	OriginalSize    int64
-	OptimizedSize   int64
+	TotalImages      int
+	ProcessedImages  int
+	OriginalSize     int64
+	OptimizedSize    int64
 	CompressionRatio float64
 }
 

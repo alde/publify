@@ -6,20 +6,20 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/spf13/cobra"
 	"github.com/alde/publify/pkg/converter"
 	"github.com/alde/publify/pkg/reader"
+	"github.com/spf13/cobra"
 )
 
 var (
-	outputPath       string
-	readerType       string
-	enableColor      bool
-	workerCount      int
-	enableOCR        bool
-	ocrLanguage      string
-	imagePages       string
-	skipPages        string
+	outputPath  string
+	readerType  string
+	enableColor bool
+	workerCount int
+	enableOCR   bool
+	ocrLanguage string
+	imagePages  string
+	skipPages   string
 )
 
 var convertCmd = &cobra.Command{
@@ -56,28 +56,28 @@ func init() {
 func runConvert(cmd *cobra.Command, args []string) error {
 	inputPath := args[0]
 
-	// Validate input file
+	// Validate input file (because trusting user input is like trusting weather forecasts)
 	if err := validateInputFile(inputPath); err != nil {
 		return fmt.Errorf("input validation failed: %w", err)
 	}
 
-	// Validate output path
+	// Validate output path (making sure we don't write to /dev/null by mistake)
 	if err := validateOutputPath(outputPath); err != nil {
 		return fmt.Errorf("output validation failed: %w", err)
 	}
 
-	// Get reader profile
+	// Get reader profile (each device has its own quirks, like people from different regions)
 	profile, err := reader.GetProfile(readerType)
 	if err != nil {
 		return fmt.Errorf("reader profile error: %w", err)
 	}
 
-	// Override color support if explicitly disabled
+	// Override color support if explicitly disabled (because sometimes we want things in black and white)
 	if !enableColor {
 		profile.Capabilities.SupportsColor = false
 	}
 
-	// Check OCR availability if requested
+	// Check OCR availability if requested (Tesseract needs to be installed properly, ja?)
 	if enableOCR && !converter.IsOCRAvailable() {
 		return fmt.Errorf("OCR requested but Tesseract not available. Please install Tesseract OCR")
 	}

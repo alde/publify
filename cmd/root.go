@@ -15,7 +15,8 @@ optimized for e-readers like Kobo, Kindle, and others.
 
 Currently supports:
 - PDF to EPUB conversion with reader-specific optimizations
-- Metadata editing for EPUB files`,
+- Metadata editing for EPUB files
+- EPUB extraction and compression for manual editing workflows`,
 	Version: "0.1.0",
 }
 

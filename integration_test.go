@@ -198,7 +198,7 @@ func TestIntegrationConverterOptionsValidation(t *testing.T) {
 
 	// Test that error message is descriptive
 	if !strings.Contains(err.Error(), "failed to open PDF") &&
-	   !strings.Contains(err.Error(), "no such file") {
+		!strings.Contains(err.Error(), "no such file") {
 		t.Errorf("Error message should indicate file issue, got: %v", err)
 	}
 }
