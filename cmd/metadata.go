@@ -132,6 +132,9 @@ func showMetadata(epubPath string) error {
 	if meta.Identifier != "" {
 		fmt.Printf("🔗 Identifier:  %s\n", meta.Identifier)
 	}
+	if meta.CoverPath != "" {
+		fmt.Printf("📸 Cover:       %s\n", meta.CoverPath)
+	}
 	if !meta.Created.IsZero() {
 		fmt.Printf("📅 Created:     %s\n", meta.Created.Format("2006-01-02 15:04:05"))
 	}
