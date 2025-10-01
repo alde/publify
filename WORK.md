@@ -161,6 +161,7 @@ publify metadata book.epub --title "New Title" --author "Author Name"
 ### Analysis Complete - EPUB Fixup Tool Needed
 - [x] **EPUB Structure Analysis** - compared scanned vs fixed Air Babylon EPUBs
 - [x] **Identified Automation Opportunities** - 80-90% of cleanup can be automated
+- [x] **EPUB Enhancement Testing** - enhanced Air Babylon with Kobo optimizations
 - [ ] **Implement `publify fixup` command** - post-process generated EPUBs for quality
 - [ ] **Progress display optimization** - current display updates slowly/incorrectly
 
@@ -170,18 +171,41 @@ publify metadata book.epub --title "New Title" --author "Author Name"
 - ✅ **Reader profiles** properly configured for Kobo, Kindle, etc.
 - ✅ **WebP compression** implemented and ready
 - ✅ **PDF repair** handles corrupted EOF markers
+- ✅ **Kobo enhancement pipeline** - CSS, JavaScript, and span optimization
+
+### Reader Enhancement Improvements Needed
+Based on testing enhanced Air Babylon EPUB vs Hotel Babylon reference:
+
+#### Typography & Spacing Issues
+- [ ] **Font size defaults** - generated EPUBs have oversized fonts (adjustable but poor default)
+- [ ] **Line spacing control** - row spacing not fully responsive to reader settings
+- [ ] **Better CSS typography** - need more granular control over text rendering
+- [ ] **Device-specific font sizing** - different readers need different baseline sizes
+
+#### Kobo Optimization Gaps
+- [ ] **Smarter koboSpan generation** - current approach adds spans everywhere, needs refinement
+- [ ] **Chapter-specific span numbering** - kobo IDs should restart per chapter for better tracking
+- [ ] **Content-aware span placement** - avoid spans in CSS, titles, metadata sections
+- [ ] **Better CSS class structure** - move from semantic tags to block-specific classes like Hotel Babylon
+
+#### Automation Quality Control
+- [ ] **CSS template system** - generate reader-optimized CSS based on content analysis
+- [ ] **Font size analysis** - detect optimal baseline font size for content type
+- [ ] **Typography pattern detection** - identify headers, paragraphs, quotes for better styling
+- [ ] **Reader capability detection** - automatically adjust features based on target device
 
 ### Next Development Priorities
-1. **Fix progress tracking** - currently shows workers but updates are slow
-2. **Optimize PDF processing** - try different library or approach for scanned PDFs
-3. **Image extraction** - implement actual image processing for specified page ranges
-4. **Test with text-heavy PDF** - verify text extraction works properly
-5. **Size optimization verification** - confirm output is actually smaller than input
+1. **Improve typography defaults** - fix oversized fonts and spacing issues
+2. **Refine Kobo enhancement pipeline** - smarter span placement and CSS generation
+3. **CSS template system** - reader-specific typography optimization
+4. **Fix progress tracking** - currently shows workers but updates are slow
+5. **Test with text-heavy PDF** - verify text extraction works properly
 
 ### Testing Strategy
 - **Air Babylon PDF**: 15MB, 420 pages, 100% scanned (worst case)
+- **Enhanced EPUB testing**: 340KB vs 307KB reference (good size, needs typography fixes)
 - **Need simpler test case**: Find PDF with actual extractable text
-- **Target**: Prove 15MB → 3-4MB conversion (25% compression ratio)
+- **Target**: Better typography defaults + maintain small file sizes
 
 ## 🧹 EPUB Fixup Command (New Priority)
 
