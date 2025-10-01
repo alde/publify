@@ -158,11 +158,11 @@ publify metadata book.epub --title "New Title" --author "Author Name"
 
 ## 🔧 Current Issues & Next Steps
 
-### Immediate Fixes Needed
-- [ ] **Progress display not working properly** - displays but updates slowly/incorrectly
-- [ ] **Performance optimization** - current PDF processing very slow on scanned books
-- [ ] **Image page processing** - need to implement actual image extraction for image pages
-- [ ] **Test with simpler PDFs** - current test case (Air Babylon) is 100% scanned, worst case
+### Analysis Complete - EPUB Fixup Tool Needed
+- [x] **EPUB Structure Analysis** - compared scanned vs fixed Air Babylon EPUBs
+- [x] **Identified Automation Opportunities** - 80-90% of cleanup can be automated
+- [ ] **Implement `publify fixup` command** - post-process generated EPUBs for quality
+- [ ] **Progress display optimization** - current display updates slowly/incorrectly
 
 ### Working Features Ready to Test
 - ✅ **Page range parsing** works: `--image-pages "1-2,419-420"`
@@ -183,12 +183,80 @@ publify metadata book.epub --title "New Title" --author "Author Name"
 - **Need simpler test case**: Find PDF with actual extractable text
 - **Target**: Prove 15MB → 3-4MB conversion (25% compression ratio)
 
-## 🔮 Future Enhancements (Not Implemented)
+## 🧹 EPUB Fixup Command (New Priority)
+
+Based on analysis of testdata EPUBs, a `publify fixup` command could automate 80-90% of post-conversion cleanup:
+
+### Identified Issues in Generated EPUBs
+- **Fragmented content**: 148 tiny sections → 28 logical chapters
+- **OCR artifacts**: Spurious line breaks, incomplete words, formatting errors
+- **Poor HTML structure**: Missing semantic markup, malformed content
+- **Generic navigation**: "Chapter 1" → meaningful titles like "6-7 am"
+- **Missing metadata**: No cover images, generic titles
+
+### Proposed `publify fixup book.epub` Features
+
+#### Text Cleanup (High Impact)
+- [ ] **Remove spurious line breaks** - detect and merge broken sentences
+- [ ] **Fix OCR artifacts** - common pattern replacement (image/word fragments)
+- [ ] **Paragraph consolidation** - merge text fragments into proper paragraphs
+- [ ] **Quote mark normalization** - fix OCR mangled quotation marks
+
+#### Content Organization (Medium Impact)
+- [ ] **Chapter detection** - use existing markov chain logic to find natural breaks
+- [ ] **Section merging** - combine micro-sections into readable chapters
+- [ ] **Navigation structure** - generate meaningful chapter titles
+- [ ] **Table of contents regeneration** - create proper navigation
+
+#### HTML Improvement (Medium Impact)
+- [ ] **HTML structure cleanup** - fix malformed tags, improve semantic markup
+- [ ] **Proper indentation** - clean formatting for better EPUB validation
+- [ ] **CSS optimization** - remove redundant styles, add e-reader friendly defaults
+
+#### Metadata Enhancement (Low Impact)
+- [ ] **Cover detection** - extract first page as cover image if missing
+- [ ] **Title cleanup** - improve generic "Converted from X.pdf" descriptions
+- [ ] **Chapter title extraction** - attempt to detect chapter names from content
+
+### Implementation Strategy
+
+```bash
+# Basic cleanup
+publify fixup messy.epub -o clean.epub
+
+# Aggressive cleanup with chapter detection
+publify fixup messy.epub -o clean.epub --reorganize-chapters
+
+# Preview changes without writing
+publify fixup messy.epub --dry-run --verbose
+```
+
+### Technical Requirements for Fixup Command
+
+#### Dependencies Needed
+- **EPUB manipulation**: Extend current bmaupin/go-epub usage
+- **Text processing**: Pattern matching, sentence detection
+- **Chapter detection**: Reuse markov chain logic from existing code
+- **HTML parsing**: golang.org/x/net/html for DOM manipulation
+
+#### Core Algorithm
+1. **Extract EPUB structure** - read all XHTML sections
+2. **Analyze content patterns** - detect OCR artifacts, chapter boundaries
+3. **Apply text cleaning** - remove line breaks, fix common OCR errors
+4. **Reorganize sections** - merge fragments, detect logical chapters
+5. **Rebuild EPUB** - generate new structure with cleaned content
+6. **Validate output** - ensure EPUB integrity maintained
+
+#### Success Metrics
+- **Section reduction**: 148 sections → 20-30 logical chapters
+- **Text quality**: 80%+ reduction in line break artifacts
+- **Navigation improvement**: Meaningful chapter titles vs generic numbering
+- **File size**: Potential 10-20% reduction from cleanup
+- **Readability**: Dramatically improved reading experience
+
+## 🔮 Future Enhancements (Lower Priority)
 
 - [ ] **OCR support** for image-based PDFs (Tesseract integration)
-- [ ] **Chapter detection** from PDF bookmarks/structure
-- [ ] **Table of contents generation**
-- [ ] **Full EPUB metadata editing** (currently shows intended changes)
 - [ ] **Batch processing** for multiple files
 - [ ] **Configuration file** for custom reader profiles
 - [ ] **Plugin system** for custom optimizations
@@ -213,11 +281,16 @@ publify metadata book.epub --title "New Title" --author "Author Name"
 
 ### Current Status Summary
 
-**Core functionality is implemented** but needs performance optimization and testing with appropriate PDFs. The simplified page range approach (`--image-pages "1-2,419-420"`) is the right solution for user control over text vs image processing.
+**Core conversion functionality is implemented** with solid architecture including worker pools, progress tracking, WebP compression, and reader profiles. The main conversion pipeline works but needs optimization.
 
-**Key insight**: The test PDF (Air Babylon) is 100% scanned with zero extractable text, making it the worst-case scenario. Need to test with PDFs that have actual text content to validate the text extraction pipeline.
+**Key insight from EPUB analysis**: The real value is in post-processing. Generated EPUBs need significant cleanup to match manual editing quality. A `fixup` command could automate 80-90% of this cleanup work.
 
-**Architecture is solid** - the worker pool, progress tracking, WebP compression, and reader profiles are all properly implemented. The bottleneck is PDF processing performance on scanned content.
+**Next logical step**: Implement the `publify fixup` command to transform raw converted EPUBs into readable, well-structured books. This addresses the gap between automated conversion and manual post-processing.
+
+**Architecture priorities**:
+1. **Fixup command** - highest impact for user experience
+2. **Performance optimization** - PDF processing speed improvements
+3. **Testing with text-heavy PDFs** - validate non-scanned content handling
 
 ---
-*Development session paused - ready for actual work testing and optimization*
+*Development focus shifted to EPUB post-processing based on testdata analysis*
